@@ -50,4 +50,5 @@ Get-ChildItem -Recurse C:\Users\Aniket Bhayana\.gemini\antigravity-ide\scratch\d
 ```
 
 ## Change log (newest first)
+- 2026-10-06 13:07 | all files | Phase 0 committed (f4eb9cd) and pushed to GitHub; branches main/schema/logic/app all created and tracked | tested: git log confirmed
 - 2026-10-06 12:30 | `drscp/` entire skeleton | Phase 0: created all directories, README, .gitignore, four CONTRACT files, three PROGRESS placeholders | tested: n/a (no SQL yet)
