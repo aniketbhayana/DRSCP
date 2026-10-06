@@ -1,0 +1,7 @@
+-- =============================================================================
+-- DRSCP: 03b_allocation_procedures.sql
+-- Owner: Person B
+-- Purpose: sp_allocate_shelter_bed, sp_assign_volunteer, sp_allocate_resource,
+--          sp_complete_allocation, sp_cancel_allocation.
+-- Status: PLACEHOLDER — Phase 2 work not started yet.
+-- =============================================================================

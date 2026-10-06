@@ -1,0 +1,13 @@
+-- =============================================================================
+-- DRSCP: 02a_seed_small.sql
+-- Owner: Person A
+-- Purpose: Small realistic seed (~3 agencies, 4 shelters, 10 requesters,
+--          15 requests, 8 volunteers) for B and C to test with early.
+-- Must run AFTER 01_schema.sql and BEFORE 03_functions/04_triggers.
+-- Status: PLACEHOLDER — Phase 1 work not started yet.
+-- =============================================================================
+
+-- TODO (Person A, Phase 1):
+--   Values for current_occupancy and quantity_available must reflect
+--   what the triggers WOULD have produced — because triggers are not
+--   yet active when seed runs. Compute these by hand from the allocation rows.

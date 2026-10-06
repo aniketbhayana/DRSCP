@@ -1,0 +1,16 @@
+-- =============================================================================
+-- DRSCP: 01_schema.sql
+-- Owner: Person A
+-- Purpose: Idempotent DDL — drops and recreates all tables in safe order.
+--          Run BEFORE 02_seed.sql, 03_functions.sql, 04_triggers.sql,
+--          05_views.sql, 06_roles_and_grants.sql.
+-- Status: PLACEHOLDER — Phase 1 work not started yet.
+-- =============================================================================
+
+-- TODO (Person A, Phase 1):
+--   1. DROP tables in reverse dependency order (safe to re-run).
+--   2. CREATE all 13 tables with PK, FK, UNIQUE, NOT NULL, CHECK constraints.
+--   3. Add ENUM-style CHECK domains for status/type columns.
+--   4. Add indexes with one-line comment per index.
+--   5. Ensure CHECK (current_occupancy <= total_capacity) on shelters.
+--   6. Ensure CHECK (quantity_available >= 0) on resource_inventory.

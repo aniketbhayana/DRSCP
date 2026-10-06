@@ -1,0 +1,6 @@
+-- =============================================================================
+-- DRSCP: 06_roles_and_grants.sql
+-- Owner: Person C
+-- Purpose: CREATE ROLE, GRANT/REVOKE on tables/views/functions, RLS policies.
+-- Status: PLACEHOLDER — Phase 2 work not started yet.
+-- =============================================================================

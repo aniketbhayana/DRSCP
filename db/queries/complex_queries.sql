@@ -1,0 +1,7 @@
+-- =============================================================================
+-- DRSCP: complex_queries.sql
+-- Owner: Person C
+-- Purpose: 15+ complex SQL queries demonstrating joins, subqueries, aggregates,
+--          window functions, CTEs, etc.
+-- Status: PLACEHOLDER — Phase 2-3 work not started yet.
+-- =============================================================================

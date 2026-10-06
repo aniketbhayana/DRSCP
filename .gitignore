@@ -1,0 +1,21 @@
+# Environment files – NEVER commit real secrets
+.env
+*.env.local
+
+# Node
+node_modules/
+npm-debug.log*
+dist/
+build/
+
+# PostgreSQL dumps
+*.dump
+*.sql.bak
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

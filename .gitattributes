@@ -1,0 +1,18 @@
+# Normalize line endings: store as LF in repo, checkout as native on each OS
+* text=auto
+
+# Shell scripts must always be LF (or they break on Linux/macOS)
+*.sh text eol=lf
+
+# SQL and markdown: store as LF
+*.sql text eol=lf
+*.md  text eol=lf
+*.mmd text eol=lf
+
+# PowerShell: native
+*.ps1 text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.dump binary

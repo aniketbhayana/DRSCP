@@ -1,0 +1,6 @@
+-- =============================================================================
+-- DRSCP: 03c_helpers.sql
+-- Owner: Person B
+-- Purpose: sp_suggest_shelter and any other helper functions.
+-- Status: PLACEHOLDER — Phase 2 work not started yet.
+-- =============================================================================

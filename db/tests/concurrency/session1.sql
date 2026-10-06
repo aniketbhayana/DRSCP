@@ -1,0 +1,6 @@
+-- =============================================================================
+-- DRSCP: session1.sql — Concurrency demo, Session 1
+-- Owner: Person B
+-- See db/tests/concurrency/README.md for step-by-step instructions.
+-- Status: PLACEHOLDER — Phase 2 work not started yet.
+-- =============================================================================

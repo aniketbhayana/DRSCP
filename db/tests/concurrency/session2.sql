@@ -1,0 +1,5 @@
+-- =============================================================================
+-- DRSCP: session2.sql — Concurrency demo, Session 2
+-- Owner: Person B
+-- Status: PLACEHOLDER — Phase 2 work not started yet.
+-- =============================================================================

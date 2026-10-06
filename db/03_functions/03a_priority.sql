@@ -1,0 +1,6 @@
+-- =============================================================================
+-- DRSCP: 03a_priority.sql
+-- Owner: Person B
+-- Purpose: compute_priority_score(p_request_id) and sp_recompute_priorities().
+-- Status: PLACEHOLDER — Phase 2 work not started yet.
+-- =============================================================================

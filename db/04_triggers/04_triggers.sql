@@ -1,0 +1,6 @@
+-- =============================================================================
+-- DRSCP: 04_triggers.sql
+-- Owner: Person B
+-- Purpose: All trigger functions and trigger definitions.
+-- Status: PLACEHOLDER — Phase 2 work not started yet.
+-- =============================================================================

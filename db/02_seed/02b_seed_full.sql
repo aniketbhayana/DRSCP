@@ -1,0 +1,8 @@
+-- =============================================================================
+-- DRSCP: 02b_seed_full.sql
+-- Owner: Person A
+-- Purpose: Full realistic flood scenario seed (~8 agencies, 15 shelters,
+--          200+ requesters, 300+ requests, 60+ volunteers).
+--          Tamil Nadu district/locality names. Varied vulnerability flags.
+-- Status: PLACEHOLDER — Phase 2-3 work not started yet.
+-- =============================================================================

@@ -1,0 +1,8 @@
+-- =============================================================================
+-- DRSCP: 05_views.sql
+-- Owner: Person C
+-- Purpose: All view definitions (v_urgent_requests_ranked, v_shelter_capacity,
+--          v_inventory_status, v_volunteer_availability, v_allocation_history,
+--          v_my_assignments, v_my_requests).
+-- Status: PLACEHOLDER — Phase 2 work not started yet.
+-- =============================================================================
