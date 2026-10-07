@@ -1,4 +1,4 @@
-﻿-- =============================================================================
+-- =============================================================================
 -- FILE   : db/04_triggers/04_triggers.sql
 -- OWNER  : Person B (Logic & Concurrency)
 -- PURPOSE: All trigger functions and trigger definitions for DRSCP.
@@ -241,10 +241,15 @@ BEGIN
       FROM allocations a
      WHERE a.shelter_id = v_shelter_id
        AND a.status = 'ACTIVE'
-       AND a.beds_allocated IS NOT NULL;
+       AND a.beds_allocated > 0;
 
     UPDATE shelters
-       SET current_occupancy = v_new_occupancy
+       SET current_occupancy = v_new_occupancy,
+           status = CASE
+                      WHEN status = 'CLOSED' THEN 'CLOSED'
+                      WHEN v_new_occupancy >= total_capacity THEN 'FULL'
+                      ELSE 'OPEN'
+                    END
      WHERE shelter_id = v_shelter_id;
 
     RETURN COALESCE(NEW, OLD);
@@ -260,8 +265,9 @@ CREATE TRIGGER trg_sync_occupancy
 COMMENT ON FUNCTION fn_sync_occupancy() IS
 'AFTER INSERT/UPDATE/DELETE trigger on allocations.
 Recomputes shelters.current_occupancy as the SUM of beds_allocated of ACTIVE
-bed-allocations for the affected shelter. Keeps the denormalized column correct.
-No action taken for volunteer or resource allocations (shelter_id IS NULL).';
+bed-allocations for the affected shelter. Also updates shelter status to FULL when
+capacity is reached and back to OPEN when beds free up.
+No action taken for volunteer or resource allocations without beds.';
 
 
 -- ===========================================================================
@@ -367,17 +373,14 @@ BEGIN
                SET quantity_available = quantity_available - COALESCE(NEW.quantity, 0),
                    last_updated       = NOW()
              WHERE resource_type_id = NEW.resource_type_id
-               AND shelter_id = (
-                   -- derive shelter from the request's district / associated shelter
-                   -- For simplicity: the inventory_id is passed via sp_allocate_resource
-                   -- and stored implicitly via resource_type_id + a join.
-                   -- We look up the inventory row that was decremented via resource_type_id.
-                   -- NOTE: if a shelter_id column is added to allocations for resource allocs,
-                   -- use that directly. For now we use the first matching inventory row.
-                   SELECT ri.shelter_id
-                     FROM resource_inventory ri
-                    WHERE ri.resource_type_id = NEW.resource_type_id
-                    LIMIT 1
+               AND (
+                   (NEW.shelter_id IS NOT NULL AND shelter_id = NEW.shelter_id)
+                   OR (NEW.shelter_id IS NULL AND shelter_id = (
+                       SELECT ri.shelter_id
+                         FROM resource_inventory ri
+                        WHERE ri.resource_type_id = NEW.resource_type_id
+                        LIMIT 1
+                   ))
                );
         END IF;
 
@@ -391,11 +394,14 @@ BEGIN
                SET quantity_available = quantity_available + COALESCE(OLD.quantity, 0),
                    last_updated       = NOW()
              WHERE resource_type_id = OLD.resource_type_id
-               AND shelter_id = (
-                   SELECT ri.shelter_id
-                     FROM resource_inventory ri
-                    WHERE ri.resource_type_id = OLD.resource_type_id
-                    LIMIT 1
+               AND (
+                   (OLD.shelter_id IS NOT NULL AND shelter_id = OLD.shelter_id)
+                   OR (OLD.shelter_id IS NULL AND shelter_id = (
+                       SELECT ri.shelter_id
+                         FROM resource_inventory ri
+                        WHERE ri.resource_type_id = OLD.resource_type_id
+                        LIMIT 1
+                   ))
                );
         END IF;
 
@@ -407,11 +413,14 @@ BEGIN
            SET quantity_available = quantity_available + COALESCE(OLD.quantity, 0),
                last_updated       = NOW()
          WHERE resource_type_id = OLD.resource_type_id
-           AND shelter_id = (
-               SELECT ri.shelter_id
-                 FROM resource_inventory ri
-                WHERE ri.resource_type_id = OLD.resource_type_id
-                LIMIT 1
+           AND (
+               (OLD.shelter_id IS NOT NULL AND shelter_id = OLD.shelter_id)
+               OR (OLD.shelter_id IS NULL AND shelter_id = (
+                   SELECT ri.shelter_id
+                     FROM resource_inventory ri
+                    WHERE ri.resource_type_id = OLD.resource_type_id
+                    LIMIT 1
+               ))
            );
     END IF;
 

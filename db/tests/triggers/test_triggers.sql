@@ -1,4 +1,4 @@
-﻿-- =============================================================================
+-- =============================================================================
 -- FILE   : db/tests/triggers/test_triggers.sql
 -- OWNER  : Person B (Logic & Concurrency)
 -- PURPOSE: Standalone tests that prove each trigger fires correctly.
@@ -115,7 +115,7 @@ BEGIN
             quantity, beds_allocated, status, allocated_by, allocated_at
         ) VALUES (
             1, NULL, NULL, NULL,  -- no shelter, volunteer, or resource
-            NULL, NULL, 'ACTIVE', 1, NOW()
+            0, 0, 'ACTIVE', 1, NOW()
         );
     EXCEPTION
         WHEN OTHERS THEN

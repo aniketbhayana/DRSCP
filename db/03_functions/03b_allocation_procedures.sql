@@ -1,4 +1,4 @@
-﻿-- =============================================================================
+-- =============================================================================
 -- FILE   : db/03_functions/03b_allocation_procedures.sql
 -- OWNER  : Person B (Logic & Concurrency)
 -- PURPOSE: Stored procedures for every allocation action.
@@ -105,8 +105,8 @@ BEGIN
               USING ERRCODE = 'P0004';
     END IF;
 
-    IF v_shelter_status <> 'ACTIVE' THEN
-        RAISE EXCEPTION 'Shelter % is not ACTIVE (status: %)',
+    IF v_shelter_status <> 'OPEN' THEN
+        RAISE EXCEPTION 'Shelter % is not OPEN (status: %)',
                          p_shelter_id, v_shelter_status
               USING ERRCODE = 'P0004';
     END IF;
@@ -155,7 +155,7 @@ BEGIN
         p_shelter_id,
         NULL,          -- no volunteer in a bed allocation
         NULL,          -- no resource in a bed allocation
-        NULL,          -- quantity is for resource allocations
+        0,             -- quantity is NOT NULL (default 0)
         p_beds,
         'ACTIVE',
         p_allocated_by,
@@ -273,8 +273,8 @@ BEGIN
         NULL,
         p_volunteer_id,
         NULL,
-        NULL,
-        NULL,
+        0,             -- quantity is NOT NULL (default 0)
+        0,             -- beds_allocated is NOT NULL (default 0)
         'ACTIVE',
         p_allocated_by,
         NOW()
@@ -337,6 +337,7 @@ DECLARE
     v_request_status    VARCHAR(20);
     v_qty_available     INT;
     v_resource_type_id  INT;
+    v_shelter_id        INT;
     v_allocation_id     INT;
 BEGIN
     IF p_quantity < 1 THEN
@@ -367,8 +368,8 @@ BEGIN
     -- -----------------------------------------------------------------------
     -- Step 2: Lock resource_inventory row second.
     -- -----------------------------------------------------------------------
-    SELECT quantity_available, resource_type_id
-      INTO v_qty_available, v_resource_type_id
+    SELECT quantity_available, resource_type_id, shelter_id
+      INTO v_qty_available, v_resource_type_id, v_shelter_id
       FROM resource_inventory
      WHERE inventory_id = p_inventory_id
        FOR UPDATE;
@@ -403,11 +404,11 @@ BEGIN
         allocated_at
     ) VALUES (
         p_request_id,
-        NULL,
+        v_shelter_id,
         NULL,
         v_resource_type_id,
         p_quantity,
-        NULL,
+        0,             -- beds_allocated is NOT NULL (default 0)
         'ACTIVE',
         p_allocated_by,
         NOW()

@@ -1,4 +1,4 @@
-﻿# Procedures Explained — Person B
+# Procedures Explained — Person B
 
 **File:** `docs/B_logic/procedures_explained.md`
 **Owner:** Person B
@@ -63,7 +63,7 @@ for all pending requests immediately."
 
 **Checks:**
 - Request must be PENDING (raises P0003)
-- Shelter must be ACTIVE (raises P0004)
+- Shelter must be OPEN (raises P0004 if CLOSED or FULL)
 - Free beds = total_capacity − current_occupancy ≥ beds requested (raises P0005)
 
 **Returns:** `allocation_id` of the new row.

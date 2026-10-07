@@ -1,4 +1,4 @@
-﻿-- =============================================================================
+-- =============================================================================
 -- FILE   : db/03_functions/03c_helpers.sql
 -- OWNER  : Person B (Logic & Concurrency)
 -- PURPOSE: Helper functions — shelter suggestion and duplicate-request detection.
@@ -37,10 +37,8 @@ CREATE OR REPLACE FUNCTION sp_suggest_shelter(
 )
 RETURNS TABLE (
     shelter_id   INT,
-    shelter_name VARCHAR(150),
     free_beds    INT,
-    district     TEXT,
-    pct_full     NUMERIC(5,1)  -- percentage of total capacity currently occupied
+    district     TEXT
 )
 LANGUAGE plpgsql
 STABLE
@@ -69,12 +67,10 @@ BEGIN
     -- -----------------------------------------------------------------------
     RETURN QUERY
     SELECT s.shelter_id::INT,
-           s.name,
            (s.total_capacity - s.current_occupancy)::INT    AS free_beds,
-           s.district::TEXT,
-           ROUND(s.current_occupancy * 100.0 / NULLIF(s.total_capacity, 0), 1) AS pct_full
+           s.district::TEXT
       FROM shelters s
-     WHERE s.status = 'ACTIVE'
+     WHERE s.status = 'OPEN'
        AND (s.total_capacity - s.current_occupancy) > 0   -- at least one free bed
      ORDER BY
            CASE WHEN LOWER(s.district) = LOWER(v_request_district) THEN 0 ELSE 1 END,
