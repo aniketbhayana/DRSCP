@@ -18,17 +18,15 @@ Phase 1 is complete! All four CONTRACT files have been approved and frozen. The 
 | Schema justification | `docs/A_design/schema_justification.md` | done | Rationale for entities, types, constraints & indexes |
 | `01_schema.sql` (DDL) | `db/01_schema/01_schema.sql` | done | Idempotent DDL, all 13 tables, constraints, FK indexes, triage indexes |
 | `02a_seed_small.sql` | `db/02_seed/02a_seed_small.sql` | done | Realistic Chennai flood scenario; all 13 tables seeded |
-| `02b_seed_full.sql` | `db/02_seed/02b_seed_full.sql` | not started | Phase 2-3 |
+| `02b_seed_full.sql` | `db/02_seed/02b_seed_full.sql` | done | Phase 3: full enterprise flood scenario seed |
 | `reset_db.sh` / `reset_db.ps1` | `db/scripts/` | done | Automated db drop, create, and sequence runner |
-| `report_section_A.md` | `docs/A_design/report_section_A.md` | not started | Phase 3 |
+| `report_section_A.md` | `docs/A_design/report_section_A.md` | done | Phase 3: Report Section A draft complete |
 | `DRSCP_final_report.md` | `docs/final/` | not started | Phase 6 |
 
 ## Next steps (ordered, max 5)
-1. Push Phase 1 deliverables to GitHub on branch `schema`.
-2. Notify Person B (logic) that `schema` is ready to be merged into `logic` for Phase 2 procedures and triggers.
-3. Notify Person C (app) that `schema` is ready to be merged into `app` for backend scaffolding and API routes.
-4. Prepare Phase 2-3 full seed data generator script (`02b_seed_full.sql`) with 100+ requests and 50+ allocations.
-5. Draft `report_section_A.md` for expo documentation.
+1. Verify end-to-end integration test (Phase 5) across DB, backend, and frontend.
+2. Rehearse concurrency demo and trigger test cases with team.
+3. Collaborate with B and C on assembling `DRSCP_final_report.md` (Phase 6).
 
 ## Blockers and waiting on
 - None! Person A has completed all Phase 1 deliverables and unblocked Persons B & C.
