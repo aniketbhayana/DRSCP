@@ -19,3 +19,6 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Embedded PGlite local database data
+backend/drscp_pg_data/
