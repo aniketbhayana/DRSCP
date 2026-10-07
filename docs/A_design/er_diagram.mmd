@@ -1,11 +1,164 @@
-# ER/EER Diagram — DRSCP
-**Owner: Person A | Status: PLACEHOLDER — Phase 1**
+erDiagram
+    %% =========================================================================
+    %% DRSCP: Entity-Relationship Diagram (13 Entities)
+    %% Course: BCSE302P Database Systems Lab Project
+    %% Note: * indicates trigger-maintained / denormalized columns
+    %% =========================================================================
 
-Mermaid `erDiagram` source will be written here in Phase 1.
-The exported PNG (`er_diagram.png`) will be generated and committed alongside.
+    agencies {
+        int agency_id PK "Auto-increment ID"
+        varchar name UK "Unique agency/NGO name"
+        varchar agency_type "GOVERNMENT | NGO | MILITARY | PRIVATE"
+        varchar contact_phone "Emergency hotline phone"
+        varchar contact_email UK "Official email"
+        timestamptz created_at "Registration timestamp"
+    }
 
-## What to include
-- All 13 entities with key attributes
-- PK/FK cardinalities (||--o{, }o--||, etc.)
-- Specialization/generalization: `app_users` → ADMIN / AGENCY_MANAGER / VOLUNTEER / REQUESTER
-- Note trigger-maintained columns (mark with *)
+    vulnerability_types {
+        int vuln_type_id PK "Auto-increment ID"
+        varchar name UK "ELDERLY | PREGNANT | INFANT | DISABLED, etc."
+        numeric weight "Triage priority additive weight (>0)"
+        text description "Clinical/demographic criteria"
+    }
+
+    requesters {
+        int requester_id PK "Auto-increment ID"
+        varchar full_name "Citizen / family head name"
+        varchar phone "Contact number for deduplication"
+        int age "Age (0 to 120)"
+        varchar gender "MALE | FEMALE | OTHER"
+        text address "Physical address or landmark"
+        varchar district "Administrative district (e.g., Chennai)"
+        timestamptz created_at "First intake timestamp"
+    }
+
+    requester_vulnerabilities {
+        int requester_id PK,FK "References requesters(requester_id)"
+        int vuln_type_id PK,FK "References vulnerability_types(vuln_type_id)"
+    }
+
+    resource_types {
+        int resource_type_id PK "Auto-increment ID"
+        varchar name UK "Item name (e.g., 20L Water Can, Rations)"
+        varchar category "FOOD | WATER | MEDICINE | EQUIPMENT | CLOTHING | OTHER"
+        varchar unit "Unit of measure (cans, packets, kits)"
+    }
+
+    shelters {
+        int shelter_id PK "Auto-increment ID"
+        int agency_id FK "Managing agency"
+        varchar name "Facility name"
+        text address "Physical location address"
+        varchar district "District location"
+        int total_capacity "Maximum capacity in beds (>0)"
+        int current_occupancy "* Trigger-maintained allocated bed count"
+        varchar status "* OPEN | FULL | CLOSED"
+        timestamptz created_at "Establishment timestamp"
+    }
+
+    resource_inventory {
+        int inventory_id PK "Auto-increment ID"
+        int shelter_id FK "Shelter location"
+        int resource_type_id FK "Catalog item reference"
+        int quantity_available "* Trigger-maintained stock level (>=0)"
+        int reorder_threshold "Minimum buffer before alert (default 10)"
+        timestamptz last_updated "* Updated on movements"
+    }
+
+    volunteers {
+        int volunteer_id PK "Auto-increment ID"
+        int agency_id FK "Affiliated relief agency"
+        varchar full_name "Responder name"
+        varchar phone "Field contact mobile"
+        varchar skill "MEDICAL | RESCUE | LOGISTICS | COOKING | DRIVING | GENERAL"
+        varchar availability_status "* AVAILABLE | ASSIGNED | INACTIVE"
+        timestamptz created_at "Enrollment timestamp"
+    }
+
+    app_users {
+        int user_id PK "Auto-increment ID"
+        varchar username UK "Unique system handle"
+        text password_hash "Bcrypt salted hash"
+        varchar role "ADMIN | AGENCY_MANAGER | VOLUNTEER | REQUESTER"
+        int agency_id FK "Nullable link for AGENCY_MANAGER"
+        int volunteer_id FK "Nullable link for VOLUNTEER"
+        int requester_id FK "Nullable link for REQUESTER"
+        timestamptz created_at "Account creation timestamp"
+    }
+
+    help_requests {
+        int request_id PK "Auto-increment ID"
+        int requester_id FK "Citizen requesting relief"
+        varchar request_type "EVACUATION | FOOD | WATER | MEDICAL | RESCUE"
+        varchar status "PENDING | ALLOCATED | COMPLETED | CANCELLED"
+        numeric priority_score "* Dynamic triage rank (trigger/procedure maintained)"
+        int household_size "Count of people affected (>=1)"
+        text location_text "Geographic rescue coordinates / landmark"
+        varchar district "Target rescue district"
+        text description "Clinical or situational details"
+        timestamptz created_at "Intake timestamp"
+        timestamptz updated_at "* Updated on status transitions"
+    }
+
+    allocations {
+        int allocation_id PK "Auto-increment ID"
+        int request_id FK "Target help request"
+        int shelter_id FK "Assigned shelter (if bed allocation)"
+        int volunteer_id FK "Assigned volunteer (if task dispatch)"
+        int resource_type_id FK "Allocated material (if supply grant)"
+        int quantity "Resource units dispensed"
+        int beds_allocated "Shelter beds reserved"
+        varchar status "ACTIVE | COMPLETED | CANCELLED"
+        int allocated_by FK "Dispatcher user ID"
+        timestamptz allocated_at "Timestamp of allocation"
+        timestamptz completed_at "Resolution or cancel timestamp"
+    }
+
+    allocation_audit_log {
+        int log_id PK "Auto-increment ID"
+        int allocation_id FK "Associated allocation"
+        varchar action "INSERT | STATUS_CHANGE | CANCEL"
+        varchar old_status "Previous lifecycle status"
+        varchar new_status "Updated lifecycle status"
+        int changed_by FK "User or system initiating change"
+        timestamptz changed_at "Timestamp of event"
+        jsonb details "Contextual audit payload"
+    }
+
+    stock_alerts {
+        int alert_id PK "Auto-increment ID"
+        int inventory_id FK "Triggering inventory record"
+        text message "Human-readable replenishment notification"
+        timestamptz created_at "Alert emission timestamp"
+        boolean resolved "True when restocked"
+    }
+
+    %% =========================================================================
+    %% RELATIONSHIPS AND CARDINALITIES
+    %% =========================================================================
+
+    agencies ||--o{ shelters : "operates"
+    agencies ||--o{ volunteers : "manages"
+    agencies |o--o{ app_users : "employs"
+
+    volunteers |o--o{ app_users : "authenticates_as"
+    requesters |o--o{ app_users : "authenticates_as"
+
+    requesters ||--|{ requester_vulnerabilities : "possesses"
+    vulnerability_types ||--o{ requester_vulnerabilities : "categorizes"
+
+    requesters ||--o{ help_requests : "submits"
+
+    help_requests ||--o{ allocations : "fulfilled_by"
+    shelters ||--o{ allocations : "reserves_beds_for"
+    volunteers ||--o{ allocations : "dispatched_to"
+    resource_types ||--o{ allocations : "supplies_item_for"
+    app_users ||--o{ allocations : "authorizes"
+
+    shelters ||--|{ resource_inventory : "maintains_stock"
+    resource_types ||--o{ resource_inventory : "cataloged_in"
+
+    resource_inventory ||--o{ stock_alerts : "generates_warning"
+
+    allocations ||--|{ allocation_audit_log : "tracked_by"
+    app_users |o--o{ allocation_audit_log : "recorded_by"
