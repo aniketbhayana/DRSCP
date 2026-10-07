@@ -1,8 +1,8 @@
 # CONTRACT/03 — API Endpoints
 
-> **STATUS: DRAFT – awaiting Day 0 team approval.**
+> **STATUS: APPROVED & FROZEN (2026-10-07).**
 > Owner of implementation: **Person C** (`backend/`).
-> After approval, changes require a Change Request in CHANGELOG.md.
+> Any future modifications require a formal Change Request logged in CHANGELOG.md.
 
 ---
 

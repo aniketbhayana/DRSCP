@@ -1,7 +1,7 @@
 # CONTRACT/01 — Entities and Columns
 
-> **STATUS: DRAFT – awaiting Day 0 team approval.**
-> After approval, this file is FROZEN. Changes require a Change Request logged in CHANGELOG.md.
+> **STATUS: APPROVED & FROZEN (2026-10-07).**
+> Any future modifications require a formal Change Request logged in CHANGELOG.md.
 
 ---
 
