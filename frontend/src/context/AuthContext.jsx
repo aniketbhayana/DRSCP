@@ -1,48 +1,56 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useCallback } from 'react';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(() => localStorage.getItem('drscp_token'));
+  const [token, setToken] = useState(() => localStorage.getItem('drscp_token') || '');
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('drscp_user');
-    return saved ? JSON.parse(saved) : { username: 'admin_chennai', role: 'ADMIN', user_id: 1 };
+    try {
+      const saved = localStorage.getItem('drscp_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
   });
 
   const login = async (username, password) => {
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setToken(data.token);
-        setUser(data.user);
-        localStorage.setItem('drscp_token', data.token);
-        localStorage.setItem('drscp_user', JSON.stringify(data.user));
-        return { success: true };
-      }
-    } catch (err) {
-      console.warn('API login error, falling back to local session:', err);
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Login failed');
     }
-    // Fallback demo user
-    const fallbackUser = { username: username || 'admin_chennai', role: 'ADMIN', user_id: 1 };
-    setUser(fallbackUser);
-    localStorage.setItem('drscp_user', JSON.stringify(fallbackUser));
-    return { success: true };
+    setToken(data.token);
+    setUser(data.user);
+    localStorage.setItem('drscp_token', data.token);
+    localStorage.setItem('drscp_user', JSON.stringify(data.user));
+    return data.user;
   };
 
   const logout = () => {
-    setToken(null);
+    setToken('');
     setUser(null);
     localStorage.removeItem('drscp_token');
     localStorage.removeItem('drscp_user');
   };
 
+  const authFetch = useCallback(async (url, opts = {}) => {
+    const currentToken = localStorage.getItem('drscp_token') || token;
+    const headers = {
+      ...(opts.headers || {}),
+      'Content-Type': 'application/json',
+    };
+    if (currentToken) {
+      headers['Authorization'] = `Bearer ${currentToken}`;
+    }
+    return fetch(url, { ...opts, headers });
+  }, [token]);
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, authFetch }}>
       {children}
     </AuthContext.Provider>
   );
