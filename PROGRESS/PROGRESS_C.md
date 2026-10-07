@@ -2,7 +2,7 @@
 Last updated: 2026-10-07 14:30   |   Current phase: 1
 
 ## Current state
-Phase 0 CONTRACT files reviewed and APPROVED by Person C. No view, role, query, backend, or frontend code written yet. Person C is beginning parallel work (frontend screens with mock data, backend scaffolding, and drafting views/queries SQL).
+Phase 1 complete. Backend Express foundation is scaffolded with routes and connection pool. Next is frontend foundation with Vite and React.
 
 ## Deliverables checklist
 
@@ -13,11 +13,11 @@ Phase 0 CONTRACT files reviewed and APPROVED by Person C. No view, role, query, 
 | Complex queries (15+) | `db/queries/complex_queries.sql` | not started | |
 | Roles & grants SQL | `db/06_roles/06_roles_and_grants.sql` | not started | |
 | Role tests | `db/tests/roles/` | not started | |
-| Backend (Node/Express) — auth | `backend/src/` | in progress | |
-| Backend — request routes | `backend/src/` | not started | |
-| Backend — allocation routes | `backend/src/` | not started | |
-| Backend — shelter/volunteer/inventory routes | `backend/src/` | not started | |
-| Backend — audit route | `backend/src/` | not started | |
+| Backend (Node/Express) — auth | `backend/src/` | done | |
+| Backend — request routes | `backend/src/` | done | |
+| Backend — allocation routes | `backend/src/` | done | |
+| Backend — shelter/volunteer/inventory routes | `backend/src/` | done | |
+| Backend — audit route | `backend/src/` | done | |
 | Backend `.env.example` | `backend/.env.example` | done | |
 | Frontend — requester screens | `frontend/src/` | not started | |
 | Frontend — admin/agency dashboard | `frontend/src/` | not started | |
