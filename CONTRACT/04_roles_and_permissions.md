@@ -1,8 +1,8 @@
 # CONTRACT/04 — Roles and Permissions
 
-> **STATUS: DRAFT – awaiting Day 0 team approval.**
+> **STATUS: APPROVED & FROZEN (2026-10-07).**
 > Owner of implementation: **Person C** (`db/06_roles/06_roles_and_grants.sql`).
-> After approval, changes require a Change Request in CHANGELOG.md.
+> Any future modifications require a formal Change Request logged in CHANGELOG.md.
 
 ---
 
