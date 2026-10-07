@@ -9,9 +9,9 @@ Phase 1 complete. Backend Express foundation is scaffolded with routes and conne
 | Deliverable | File path | Status | Notes |
 |---|---|---|---|
 | Review & approve CONTRACT | `CONTRACT/` | done | Approved on 2026-10-07 |
-| Views (7 views) | `db/05_views/05_views.sql` | not started | Draft against frozen contract |
-| Complex queries (15+) | `db/queries/complex_queries.sql` | not started | |
-| Roles & grants SQL | `db/06_roles/06_roles_and_grants.sql` | not started | |
+| Views (7 views) | `db/05_views/05_views.sql` | done | Drafted |
+| Complex queries (15+) | `db/queries/complex_queries.sql` | done | |
+| Roles & grants SQL | `db/06_roles/06_roles_and_grants.sql` | done | |
 | Role tests | `db/tests/roles/` | not started | |
 | Backend (Node/Express) — auth | `backend/src/` | done | |
 | Backend — request routes | `backend/src/` | done | |
@@ -19,10 +19,10 @@ Phase 1 complete. Backend Express foundation is scaffolded with routes and conne
 | Backend — shelter/volunteer/inventory routes | `backend/src/` | done | |
 | Backend — audit route | `backend/src/` | done | |
 | Backend `.env.example` | `backend/.env.example` | done | |
-| Frontend — requester screens | `frontend/src/` | not started | |
-| Frontend — admin/agency dashboard | `frontend/src/` | not started | |
-| Frontend — volunteer screen | `frontend/src/` | not started | |
-| Frontend — audit log viewer | `frontend/src/` | not started | |
+| Frontend — requester screens | `frontend/src/` | done | |
+| Frontend — admin/agency dashboard | `frontend/src/` | done | |
+| Frontend — volunteer screen | `frontend/src/` | done | |
+| Frontend — audit log viewer | `frontend/src/` | done | |
 | Frontend `.env.example` | `frontend/.env.example` | done | |
 | `queries_explained.md` | `docs/C_app/queries_explained.md` | not started | |
 | `roles_and_security.md` | `docs/C_app/roles_and_security.md` | not started | |
