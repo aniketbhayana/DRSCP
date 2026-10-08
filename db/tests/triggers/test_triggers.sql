@@ -68,7 +68,7 @@ DECLARE
     v_err_code TEXT;
 BEGIN
     -- Ensure request_id=1 is PENDING (needed for the duplicate check query).
-    UPDATE help_requests SET status = 'PENDING' WHERE request_id = 1;
+    UPDATE help_requests SET status = 'PENDING', created_at = NOW() WHERE request_id = 1;
 
     -- Get the requester and type of request #1.
     SELECT request_id INTO v_req_id FROM help_requests WHERE request_id = 1;
@@ -145,7 +145,7 @@ DECLARE
     v_alloc_id    INT;
 BEGIN
     -- Ensure request #1 is PENDING.
-    UPDATE help_requests SET status = 'PENDING' WHERE request_id = 1;
+    UPDATE help_requests SET status = 'PENDING', created_at = NOW() WHERE request_id = 1;
 
     SELECT current_occupancy INTO v_occ_before
       FROM shelters WHERE shelter_id = 1;
@@ -192,6 +192,7 @@ DECLARE
     v_alloc_id    INT;
 BEGIN
     -- Ensure volunteer #1 is AVAILABLE and request #1 is PENDING.
+    UPDATE allocations SET status = 'COMPLETED' WHERE volunteer_id = 1 AND status = 'ACTIVE';
     UPDATE volunteers     SET availability_status = 'AVAILABLE' WHERE volunteer_id = 1;
     UPDATE help_requests  SET status              = 'PENDING'   WHERE request_id   = 1;
 
@@ -229,7 +230,7 @@ DECLARE
     v_alloc_id    INT;
     v_log_count   INT;
 BEGIN
-    UPDATE help_requests SET status = 'PENDING' WHERE request_id = 1;
+    UPDATE help_requests SET status = 'PENDING', created_at = NOW() WHERE request_id = 1;
 
     INSERT INTO allocations (
         request_id, shelter_id, beds_allocated, status, allocated_by, allocated_at
