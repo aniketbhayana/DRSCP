@@ -1,4 +1,5 @@
-import React, { createContext, useState, useContext, useCallback } from 'react';
+﻿import React, { createContext, useState, useContext, useCallback } from 'react';
+import { safeJson } from '../utils/safeJson';
 
 const AuthContext = createContext();
 
@@ -14,15 +15,27 @@ export const AuthProvider = ({ children }) => {
   });
 
   const login = async (username, password) => {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || 'Login failed');
+    let res;
+    try {
+      res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+    } catch (netErr) {
+      throw new Error('Backend server is unreachable. Please verify server is running on port 5000.');
     }
+
+    const data = await safeJson(res) || {};
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Login failed (' + res.status + ')');
+    }
+
+    if (!data.token || !data.user) {
+      throw new Error('Invalid response from authentication server');
+    }
+
     setToken(data.token);
     setUser(data.user);
     localStorage.setItem('drscp_token', data.token);
@@ -44,9 +57,15 @@ export const AuthProvider = ({ children }) => {
       'Content-Type': 'application/json',
     };
     if (currentToken) {
-      headers['Authorization'] = `Bearer ${currentToken}`;
+      headers['Authorization'] = 'Bearer ' + currentToken;
     }
-    return fetch(url, { ...opts, headers });
+    try {
+      return await fetch(url, { ...opts, headers });
+    } catch (err) {
+      console.warn('Network error during fetch to ' + url + ':', err.message);
+      // Return a simulated response with empty body rather than throwing
+      return new Response('', { status: 503, statusText: 'Service Unavailable' });
+    }
   }, [token]);
 
   return (

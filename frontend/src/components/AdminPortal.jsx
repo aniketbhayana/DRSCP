@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { safeJson } from '../utils/safeJson';
 
 const BADGE_MAP = {
   RESCUE: 'badge-rescue',
@@ -39,11 +40,26 @@ export default function AdminPortal({ onSignOut }) {
         authFetch('/api/requests/urgent'),
       ]);
 
-      if (allocRes.ok) setAllocations(await allocRes.json());
-      if (invRes.ok) setInventory(await invRes.json());
-      if (shelterRes.ok) setShelters(await shelterRes.json());
-      if (volRes.ok) setVolunteers(await volRes.json());
-      if (reqRes.ok) setUrgentRequests(await reqRes.json());
+      if (allocRes.ok) {
+        const d = await safeJson(allocRes);
+        if (Array.isArray(d)) setAllocations(d);
+      }
+      if (invRes.ok) {
+        const d = await safeJson(invRes);
+        if (Array.isArray(d)) setInventory(d);
+      }
+      if (shelterRes.ok) {
+        const d = await safeJson(shelterRes);
+        if (Array.isArray(d)) setShelters(d);
+      }
+      if (volRes.ok) {
+        const d = await safeJson(volRes);
+        if (Array.isArray(d)) setVolunteers(d);
+      }
+      if (reqRes.ok) {
+        const d = await safeJson(reqRes);
+        if (Array.isArray(d)) setUrgentRequests(d);
+      }
     } catch (err) {
       console.warn('Admin load error:', err.message);
     } finally {

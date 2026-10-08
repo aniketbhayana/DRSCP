@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { safeJson } from '../utils/safeJson';
 
 const REQUEST_TYPES = [
   { id: 'RESCUE', label: 'Emergency Rescue', icon: '🚨', desc: 'Trapped by flood or debris' },
@@ -33,8 +34,10 @@ export default function UserPortal({ onSignOut }) {
     try {
       const res = await authFetch('/api/requests/my');
       if (res.ok) {
-        const data = await res.json();
-        setMyRequests(data);
+        const data = await safeJson(res);
+        if (Array.isArray(data)) {
+          setMyRequests(data);
+        }
       }
     } catch (err) {
       console.warn('Failed to fetch history:', err.message);
@@ -73,18 +76,20 @@ export default function UserPortal({ onSignOut }) {
         }),
       });
 
-      const data = await res.json();
+      const data = await safeJson(res);
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to submit request');
+        throw new Error((data && data.error) || 'Failed to submit request (' + res.status + ')');
       }
 
-      setRecentResult(data);
+      if (data) {
+        setRecentResult(data);
+      }
       setLocationText('');
       setDescription('');
       fetchMyRequests();
     } catch (err) {
-      setErrorMsg(err.message);
+      setErrorMsg(err.message || 'Error submitting request');
     } finally {
       setSubmitting(false);
     }
