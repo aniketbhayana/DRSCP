@@ -4,6 +4,12 @@ const asyncHandler = require('../utils/asyncHandler');
 const { authenticate, optionalAuthenticate, authorize } = require('../middleware/auth');
 const router = express.Router();
 
+// GET /api/requests/vulnerabilities (Catalog of vulnerability types & priority weights)
+router.get('/vulnerabilities', optionalAuthenticate, asyncHandler(async (req, res) => {
+  const { rows } = await pool.query('SELECT * FROM vulnerability_types ORDER BY weight DESC');
+  res.json(rows);
+}));
+
 // GET /api/requests (Admin: paginated requests)
 router.get('/', authenticate, authorize(['ADMIN', 'AGENCY_MANAGER']), asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 50;
@@ -11,7 +17,13 @@ router.get('/', authenticate, authorize(['ADMIN', 'AGENCY_MANAGER']), asyncHandl
   const status = req.query.status;
 
   let query = `
-    SELECT hr.*, r.full_name AS requester_name, r.phone AS requester_phone, r.district AS requester_district
+    SELECT hr.*, r.full_name AS requester_name, r.phone AS requester_phone, r.district AS requester_district,
+      (
+        SELECT string_agg(vt.name, ', ')
+        FROM requester_vulnerabilities rv
+        JOIN vulnerability_types vt ON rv.vuln_type_id = vt.vuln_type_id
+        WHERE rv.requester_id = r.requester_id
+      ) AS vulnerabilities
     FROM help_requests hr
     JOIN requesters r ON hr.requester_id = r.requester_id
     ORDER BY hr.priority_score DESC, hr.created_at DESC
@@ -20,7 +32,13 @@ router.get('/', authenticate, authorize(['ADMIN', 'AGENCY_MANAGER']), asyncHandl
   const params = [limit, offset];
   if (status) {
     query = `
-      SELECT hr.*, r.full_name AS requester_name, r.phone AS requester_phone, r.district AS requester_district
+      SELECT hr.*, r.full_name AS requester_name, r.phone AS requester_phone, r.district AS requester_district,
+        (
+          SELECT string_agg(vt.name, ', ')
+          FROM requester_vulnerabilities rv
+          JOIN vulnerability_types vt ON rv.vuln_type_id = vt.vuln_type_id
+          WHERE rv.requester_id = r.requester_id
+        ) AS vulnerabilities
       FROM help_requests hr
       JOIN requesters r ON hr.requester_id = r.requester_id
       WHERE hr.status = $3
@@ -35,25 +53,33 @@ router.get('/', authenticate, authorize(['ADMIN', 'AGENCY_MANAGER']), asyncHandl
 
 // GET /api/requests/urgent (Admin/Manager: urgent ranked)
 router.get('/urgent', optionalAuthenticate, asyncHandler(async (req, res) => {
-  try {
-    const { rows } = await pool.query('SELECT * FROM v_urgent_requests_ranked LIMIT 100');
-    res.json(rows);
-  } catch (err) {
-    const { rows } = await pool.query(`
-      SELECT hr.*, r.full_name AS requester_name, r.phone AS requester_phone, r.district AS requester_district
-      FROM help_requests hr
-      JOIN requesters r ON hr.requester_id = r.requester_id
-      WHERE hr.status = 'PENDING'
-      ORDER BY hr.priority_score DESC
-    `);
-    res.json(rows);
-  }
+  const { rows } = await pool.query(`
+    SELECT hr.*, r.full_name AS requester_name, r.phone AS requester_phone, r.district AS requester_district,
+      (
+        SELECT string_agg(vt.name, ', ')
+        FROM requester_vulnerabilities rv
+        JOIN vulnerability_types vt ON rv.vuln_type_id = vt.vuln_type_id
+        WHERE rv.requester_id = r.requester_id
+      ) AS vulnerabilities
+    FROM help_requests hr
+    JOIN requesters r ON hr.requester_id = r.requester_id
+    WHERE hr.status = 'PENDING'
+    ORDER BY hr.priority_score DESC, hr.created_at DESC
+    LIMIT 100
+  `);
+  res.json(rows);
 }));
 
 // GET /api/requests/my (Requester: own requests with allocation details)
 router.get('/my', authenticate, asyncHandler(async (req, res) => {
   const { rows } = await pool.query(`
     SELECT hr.*, r.full_name AS requester_name,
+      (
+        SELECT string_agg(vt.name, ', ')
+        FROM requester_vulnerabilities rv
+        JOIN vulnerability_types vt ON rv.vuln_type_id = vt.vuln_type_id
+        WHERE rv.requester_id = r.requester_id
+      ) AS vulnerabilities,
       a.allocation_id, a.status AS alloc_status, a.beds_allocated,
       s.name AS shelter_name, s.district AS shelter_district,
       v.full_name AS volunteer_name, v.skill AS volunteer_skill, v.phone AS volunteer_phone,
@@ -73,7 +99,7 @@ router.get('/my', authenticate, asyncHandler(async (req, res) => {
 
 // POST /api/requests (Submit + instant auto-allocation via stored procedures & math formula)
 router.post('/', authenticate, asyncHandler(async (req, res) => {
-  let { request_type, household_size, location_text, district, description } = req.body;
+  let { request_type, household_size, location_text, district, description, vulnerabilities } = req.body;
 
   // Map SHELTER to EVACUATION (db constraint allows: EVACUATION, FOOD, WATER, MEDICAL, RESCUE)
   if (request_type === 'SHELTER') {
@@ -96,6 +122,30 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     await pool.query('UPDATE app_users SET requester_id = $1 WHERE user_id = $2', [requester_id, req.user.user_id]);
   }
 
+  // Record vulnerabilities if supplied to factor into priority score calculation
+  if (Array.isArray(vulnerabilities)) {
+    await pool.query('DELETE FROM requester_vulnerabilities WHERE requester_id = $1', [requester_id]);
+    for (const item of vulnerabilities) {
+      if (!item) continue;
+      let vId = null;
+      if (typeof item === 'number') {
+        vId = item;
+      } else if (typeof item === 'string') {
+        const { rows: vMatch } = await pool.query(
+          'SELECT vuln_type_id FROM vulnerability_types WHERE UPPER(name) = UPPER($1) LIMIT 1',
+          [item.trim()]
+        );
+        if (vMatch.length) vId = vMatch[0].vuln_type_id;
+      }
+      if (vId) {
+        await pool.query(
+          'INSERT INTO requester_vulnerabilities (requester_id, vuln_type_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+          [requester_id, vId]
+        );
+      }
+    }
+  }
+
   // Insert the request (trigger auto-computes priority_score formula)
   let newRequest;
   try {
@@ -105,6 +155,15 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
       RETURNING *
     `, [requester_id, request_type, parseInt(household_size) || 1, location_text, district || 'Chennai', description || '']);
     newRequest = reqRows[0];
+
+    // Refresh row to capture trigger-computed priority_score
+    const { rows: scoreCheck } = await pool.query(
+      'SELECT * FROM help_requests WHERE request_id = $1',
+      [newRequest.request_id]
+    );
+    if (scoreCheck.length) {
+      newRequest = scoreCheck[0];
+    }
   } catch (insertErr) {
     if (insertErr.code === 'P0010') {
       return res.status(409).json({

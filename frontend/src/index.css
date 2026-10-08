@@ -1,4 +1,4 @@
-﻿/* ===================================================================
+/* ===================================================================
    DRSCP — Disaster Resource & Shelter Coordination Platform
    Premium Dark Theme | Dual Portal Design System
 =================================================================== */
@@ -137,6 +137,8 @@ a { color: var(--primary); text-decoration: none; transition: color 0.2s; }
 .portal-card:hover::before { opacity: 1; }
 .portal-card.admin-card { border-color: rgba(59,130,246,0.3); }
 .portal-card.admin-card:hover { border-color: var(--primary); box-shadow: 0 8px 40px var(--primary-glow); }
+.portal-card.volunteer-card { border-color: rgba(2,132,199,0.35); }
+.portal-card.volunteer-card:hover { border-color: #0284c7; box-shadow: 0 8px 40px rgba(2,132,199,0.25); }
 .portal-card.user-card { border-color: rgba(16,185,129,0.3); }
 .portal-card.user-card:hover { border-color: var(--user-primary); box-shadow: 0 8px 40px var(--user-glow); }
 
@@ -148,6 +150,7 @@ a { color: var(--primary); text-decoration: none; transition: color 0.2s; }
   font-size: 2rem;
 }
 .admin-card .portal-icon { background: rgba(59,130,246,0.15); border: 2px solid rgba(59,130,246,0.3); }
+.volunteer-card .portal-icon { background: rgba(2,132,199,0.15); border: 2px solid rgba(2,132,199,0.3); }
 .user-card  .portal-icon { background: rgba(16,185,129,0.15); border: 2px solid rgba(16,185,129,0.3); }
 
 .portal-card h3 { font-size: 1.25rem; margin-bottom: 0.5rem; }
@@ -167,6 +170,11 @@ a { color: var(--primary); text-decoration: none; transition: color 0.2s; }
 .login-page.user-login {
   background:
     radial-gradient(ellipse 60% 50% at 50% 0%, rgba(16,185,129,0.12) 0%, transparent 60%),
+    var(--bg);
+}
+.login-page.volunteer-login {
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(2,132,199,0.15) 0%, transparent 60%),
     var(--bg);
 }
 
@@ -193,6 +201,7 @@ a { color: var(--primary); text-decoration: none; transition: color 0.2s; }
   margin-bottom: 1.5rem;
 }
 .admin-badge { background: rgba(59,130,246,0.15); color: var(--primary); border: 1px solid rgba(59,130,246,0.3); }
+.volunteer-badge { background: rgba(2,132,199,0.15); color: #38bdf8; border: 1px solid rgba(2,132,199,0.35); }
 .user-badge  { background: rgba(16,185,129,0.15); color: var(--user-primary); border: 1px solid rgba(16,185,129,0.3); }
 
 .login-box h2 { font-size: 1.6rem; margin-bottom: 0.25rem; }

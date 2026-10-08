@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const pool = require('../db/pool');
 const asyncHandler = require('../utils/asyncHandler');
 const { authenticate, authorize } = require('../middleware/auth');
@@ -77,7 +77,21 @@ router.post('/resource', authenticate, authorize(['ADMIN', 'AGENCY_MANAGER']), a
 }));
 
 // ── POST /api/allocations/:id/complete
-router.post('/:id/complete', authenticate, authorize(['ADMIN', 'AGENCY_MANAGER']), asyncHandler(async (req, res) => {
+router.post('/:id/complete', authenticate, authorize(['ADMIN', 'AGENCY_MANAGER', 'VOLUNTEER']), asyncHandler(async (req, res) => {
+  // If volunteer, verify they are assigned to this allocation
+  if (req.user.role === 'VOLUNTEER') {
+    const { rows: ownAlloc } = await pool.query(`
+      SELECT a.allocation_id
+      FROM allocations a
+      JOIN app_users au ON au.volunteer_id = a.volunteer_id
+      WHERE a.allocation_id = $1 AND au.user_id = $2
+    `, [req.params.id, req.user.user_id]);
+
+    if (!ownAlloc.length) {
+      return res.status(403).json({ error: 'You are only authorized to complete allocations assigned to yourself.' });
+    }
+  }
+
   await pool.query('SELECT sp_complete_allocation($1, $2)', [req.params.id, req.user.user_id]);
   res.json({ status: 'COMPLETED' });
 }));

@@ -1,8 +1,9 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import PortalSelector from './components/PortalSelector';
 import LoginModal from './components/LoginModal';
 import AdminPortal from './components/AdminPortal';
+import VolunteerPortal from './components/VolunteerPortal';
 import UserPortal from './components/UserPortal';
 import './index.css';
 
@@ -10,7 +11,7 @@ const ADMIN_ROLES = ['ADMIN', 'AGENCY_MANAGER'];
 
 function MainApp() {
   const { user, logout } = useAuth();
-  // selectedPortal: null (selector) | 'admin' | 'user'
+  // selectedPortal: null (selector) | 'admin' | 'volunteer' | 'user'
   const [selectedPortal, setSelectedPortal] = useState(null);
 
   // Auto-detect portal if user already has an active session in localStorage
@@ -18,6 +19,8 @@ function MainApp() {
     if (user && !selectedPortal) {
       if (ADMIN_ROLES.includes(user.role)) {
         setSelectedPortal('admin');
+      } else if (user.role === 'VOLUNTEER') {
+        setSelectedPortal('volunteer');
       } else {
         setSelectedPortal('user');
       }
@@ -40,9 +43,7 @@ function MainApp() {
       <LoginModal
         portalType={selectedPortal}
         onBack={() => setSelectedPortal(null)}
-        onLoginSuccess={() => {
-          // Handled by state
-        }}
+        onLoginSuccess={() => {}}
       />
     );
   }
@@ -60,11 +61,14 @@ function MainApp() {
               ⛔ Access Denied: Your account <strong>({user.username})</strong> has role <strong>{user.role}</strong> and cannot access the Admin Operations Center.
             </div>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-              Please switch to an administrator account or return to the Citizen Relief Portal.
+              Please switch to an administrator account or open your dedicated portal.
             </p>
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-              <button className="btn btn-ghost btn-full" onClick={() => setSelectedPortal('user')}>
-                Open Citizen Portal
+              <button
+                className="btn btn-ghost btn-full"
+                onClick={() => setSelectedPortal(user.role === 'VOLUNTEER' ? 'volunteer' : 'user')}
+              >
+                Open {user.role === 'VOLUNTEER' ? 'Volunteer Console' : 'Citizen Portal'}
               </button>
               <button className="btn btn-danger btn-full" onClick={handleSignOut}>
                 Switch Account
@@ -78,7 +82,13 @@ function MainApp() {
     return <AdminPortal onSignOut={handleSignOut} />;
   }
 
-  // State 4: User / Citizen Relief Portal
+  // State 4: Volunteer Portal Requested OR User has role VOLUNTEER
+  // (A volunteer must ONLY see their own current allocations console)
+  if (selectedPortal === 'volunteer' || user.role === 'VOLUNTEER') {
+    return <VolunteerPortal onSignOut={handleSignOut} />;
+  }
+
+  // State 5: Citizen / Requester Relief Portal
   return <UserPortal onSignOut={handleSignOut} />;
 }
 

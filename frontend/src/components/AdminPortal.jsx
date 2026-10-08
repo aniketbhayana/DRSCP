@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { safeJson } from '../utils/safeJson';
 
@@ -524,6 +524,66 @@ export default function AdminPortal({ onSignOut }) {
                 <p>Requests automatically scored by vulnerability, type bonus & wait-time formula</p>
               </div>
 
+              {/* Priority Score Review & Simulation Tool */}
+              <div
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)',
+                  padding: '1.25rem 1.5rem',
+                  marginBottom: '1.5rem',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '1.25rem' }}>🧮</span>
+                  <h3 style={{ fontSize: '1.05rem', color: 'var(--text)' }}>
+                    Priority Score Review &amp; Formula Verification
+                  </h3>
+                </div>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                  The database function <code>compute_priority_score()</code> evaluates every incoming request against table-driven vulnerability weights:
+                </p>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                    gap: '0.65rem',
+                    marginBottom: '1rem',
+                  }}
+                >
+                  <div style={{ background: 'var(--surface-2)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>PREGNANT WOMAN</div>
+                    <strong style={{ color: '#f43f5e', fontSize: '1.1rem' }}>+30.00 pts</strong>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>Maternal monitoring</div>
+                  </div>
+                  <div style={{ background: 'var(--surface-2)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>WHEELCHAIR / DISABLED</div>
+                    <strong style={{ color: '#a855f7', fontSize: '1.1rem' }}>+25.00 pts</strong>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>Locomotor impairment</div>
+                  </div>
+                  <div style={{ background: 'var(--surface-2)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ELDERLY (60+)</div>
+                    <strong style={{ color: '#38bdf8', fontSize: '1.1rem' }}>+20.00 pts</strong>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>Reduced mobility</div>
+                  </div>
+                  <div style={{ background: 'var(--surface-2)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>INFANT / TODDLER</div>
+                    <strong style={{ color: '#34d399', fontSize: '1.1rem' }}>+20.00 pts</strong>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>Under 2 years / milk</div>
+                  </div>
+                  <div style={{ background: 'var(--surface-2)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>CHRONIC ILLNESS</div>
+                    <strong style={{ color: '#fbbf24', fontSize: '1.1rem' }}>+15.00 pts</strong>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>Dialysis / oxygen</div>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', background: 'var(--surface-3)', padding: '0.5rem 0.75rem', borderRadius: '4px' }}>
+                  📌 <strong>Mathematical Model:</strong> <code>Score = SUM(vuln_weights) + urgency_constant(Rescue=40, Med=35, Evac=30, Water=20, Food=15) + (household-1)*2 [cap 20] + wait_bonus [cap 50]</code>
+                </div>
+              </div>
+
               <div className="table-wrap">
                 <table>
                   <thead>
@@ -533,6 +593,7 @@ export default function AdminPortal({ onSignOut }) {
                       <th>Citizen</th>
                       <th>Type</th>
                       <th>Household</th>
+                      <th>Vulnerabilities Tagged</th>
                       <th>District & Location</th>
                       <th>Status</th>
                       <th>Actions</th>
@@ -558,6 +619,30 @@ export default function AdminPortal({ onSignOut }) {
                             </span>
                           </td>
                           <td>{r.household_size} persons</td>
+                          <td>
+                            {r.vulnerabilities ? (
+                              <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                                {r.vulnerabilities.split(',').map((v) => (
+                                  <span
+                                    key={v.trim()}
+                                    style={{
+                                      background: 'rgba(245, 158, 11, 0.15)',
+                                      color: '#fbbf24',
+                                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                                      borderRadius: '4px',
+                                      padding: '0.1rem 0.35rem',
+                                      fontSize: '0.7rem',
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    {v.trim()}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>None</span>
+                            )}
+                          </td>
                           <td>
                             <div>{r.district}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{r.location_text}</div>
