@@ -14,6 +14,12 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
+  const getApiUrl = (endpoint) => {
+    // If endpoint starts with /api, use relative path (proxied by Vite), 
+    // or direct port 5000 if running standalone
+    return endpoint;
+  };
+
   const login = async (username, password) => {
     let res;
     try {
@@ -22,8 +28,26 @@ export const AuthProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
+
+      // Fallback directly to backend port 5000 if proxy returned 404
+      if (res.status === 404) {
+        res = await fetch('http://localhost:5000/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+      }
     } catch (netErr) {
-      throw new Error('Backend server is unreachable. Please verify server is running on port 5000.');
+      // Direct backend attempt if proxy network failed
+      try {
+        res = await fetch('http://localhost:5000/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+      } catch {
+        throw new Error('Backend server is unreachable. Please verify server is running on port 5000.');
+      }
     }
 
     const data = await safeJson(res) || {};
@@ -59,11 +83,20 @@ export const AuthProvider = ({ children }) => {
     if (currentToken) {
       headers['Authorization'] = 'Bearer ' + currentToken;
     }
+
     try {
-      return await fetch(url, { ...opts, headers });
+      let res = await fetch(url, { ...opts, headers });
+      if (res.status === 404 && url.startsWith('/api')) {
+        res = await fetch('http://localhost:5000' + url, { ...opts, headers });
+      }
+      return res;
     } catch (err) {
+      try {
+        if (url.startsWith('/api')) {
+          return await fetch('http://localhost:5000' + url, { ...opts, headers });
+        }
+      } catch (_) {}
       console.warn('Network error during fetch to ' + url + ':', err.message);
-      // Return a simulated response with empty body rather than throwing
       return new Response('', { status: 503, statusText: 'Service Unavailable' });
     }
   }, [token]);
