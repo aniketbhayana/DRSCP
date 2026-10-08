@@ -1,63 +1,24 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { safeJson } from '../utils/safeJson';
 
 const REQUEST_TYPES = [
-  { id: 'RESCUE', label: 'Emergency Rescue', icon: '🚨', desc: 'Trapped by flood or debris' },
-  { id: 'MEDICAL', label: 'Medical Assistance', icon: '🏥', desc: 'Injured, chronic care or medicine' },
-  { id: 'SHELTER', label: 'Shelter & Evac', icon: '🏠', desc: 'Safe shelter beds needed' },
-  { id: 'FOOD', label: 'Food Ration Packs', icon: '🍱', desc: 'Emergency meals for household' },
-  { id: 'WATER', label: 'Clean Drinking Water', icon: '💧', desc: 'Cans / safe drinking water' },
+  { id: 'RESCUE', label: 'Emergency Rescue', desc: 'Trapped or stranded by water' },
+  { id: 'MEDICAL', label: 'Medical Assistance', desc: 'Injuries, illness, or urgent medicine' },
+  { id: 'SHELTER', label: 'Emergency Shelter', desc: 'Temporary shelter bed required' },
+  { id: 'FOOD', label: 'Food Rations', desc: 'Packaged food and emergency meals' },
+  { id: 'WATER', label: 'Drinking Water', desc: 'Safe clean drinking water cans' },
 ];
 
 const DISTRICTS = ['Chennai', 'Chengalpattu', 'Kancheepuram', 'Tiruvallur'];
 
-const VULNERABILITY_OPTIONS = [
-  {
-    id: 'ELDERLY',
-    label: 'Elderly Person (60+ yrs)',
-    icon: '👵',
-    weight: 20,
-    desc: 'Senior citizen with reduced mobility or needing care',
-  },
-  {
-    id: 'DISABLED',
-    label: 'Wheelchair / Disabled',
-    icon: '♿',
-    weight: 25,
-    desc: 'Wheelchair-bound, locomotor, or sensory impairment',
-  },
-  {
-    id: 'PREGNANT',
-    label: 'Pregnant Woman',
-    icon: '🤰',
-    weight: 30,
-    desc: 'Expectant mother requiring prenatal / maternal care',
-  },
-  {
-    id: 'INFANT',
-    label: 'Infant / Toddler (< 2 yrs)',
-    icon: '👶',
-    weight: 20,
-    desc: 'Baby requiring formula, diapers, or critical care',
-  },
-  {
-    id: 'CHRONIC_ILLNESS',
-    label: 'Chronic Illness / Oxygen',
-    icon: '💊',
-    weight: 15,
-    desc: 'Dialysis, oxygen cylinder, or life-critical medication',
-  },
+const SPECIAL_NEEDS = [
+  { id: 'PREGNANT', label: 'Pregnant woman' },
+  { id: 'INFANT', label: 'Infant / Young child' },
+  { id: 'ELDERLY', label: 'Elderly person' },
+  { id: 'DISABLED', label: 'Person with disability / Mobility issue' },
+  { id: 'CHRONIC_ILLNESS', label: 'Chronic medical condition' },
 ];
-
-const TYPE_SCORES = {
-  RESCUE: 40,
-  MEDICAL: 35,
-  EVACUATION: 30,
-  SHELTER: 30,
-  WATER: 20,
-  FOOD: 15,
-};
 
 export default function UserPortal({ onSignOut }) {
   const { user, authFetch } = useAuth();
@@ -67,7 +28,7 @@ export default function UserPortal({ onSignOut }) {
   const [household, setHousehold] = useState(2);
   const [locationText, setLocationText] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedVulns, setSelectedVulns] = useState([]);
+  const [selectedNeeds, setSelectedNeeds] = useState([]);
 
   const [submitting, setSubmitting] = useState(false);
   const [recentResult, setRecentResult] = useState(null);
@@ -76,28 +37,11 @@ export default function UserPortal({ onSignOut }) {
   const [myRequests, setMyRequests] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
-  // Toggle vulnerability checkbox
-  const toggleVuln = (id) => {
-    setSelectedVulns((prev) =>
-      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
+  const toggleNeed = (id) => {
+    setSelectedNeeds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
-
-  // Real-time Priority Score Calculation (matches SQL compute_priority_score formula)
-  const baseUrgencyScore = TYPE_SCORES[reqType] || 10;
-  const vulnScore = selectedVulns.reduce((sum, vId) => {
-    const found = VULNERABILITY_OPTIONS.find((v) => v.id === vId);
-    return sum + (found ? found.weight : 0);
-  }, 0);
-  const householdScore = Math.min((Math.max(1, parseInt(household) || 1) - 1) * 2, 20);
-  const livePriorityScore = Math.round((baseUrgencyScore + vulnScore + householdScore) * 10) / 10;
-
-  let triageCategory = { label: 'STANDARD PRIORITY', color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)' };
-  if (livePriorityScore >= 70) {
-    triageCategory = { label: 'CRITICAL EMERGENCY (HIGH PRIORITY)', color: '#f87171', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.4)' };
-  } else if (livePriorityScore >= 40) {
-    triageCategory = { label: 'ELEVATED PRIORITY (EXPEDITE)', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.4)' };
-  }
 
   // Fetch citizen's existing requests
   const fetchMyRequests = useCallback(async () => {
@@ -111,7 +55,7 @@ export default function UserPortal({ onSignOut }) {
         }
       }
     } catch (err) {
-      console.warn('Failed to fetch history:', err.message);
+      console.warn('Failed to fetch requests:', err.message);
     } finally {
       setLoadingHistory(false);
     }
@@ -130,7 +74,7 @@ export default function UserPortal({ onSignOut }) {
     setRecentResult(null);
 
     if (!locationText.trim()) {
-      setErrorMsg('Please specify your current street or area location.');
+      setErrorMsg('Please enter your street address or location.');
       return;
     }
 
@@ -144,7 +88,7 @@ export default function UserPortal({ onSignOut }) {
           household_size: parseInt(household) || 1,
           location_text: locationText.trim(),
           description: description.trim(),
-          vulnerabilities: selectedVulns,
+          vulnerability_flags: selectedNeeds,
         }),
       });
 
@@ -159,7 +103,7 @@ export default function UserPortal({ onSignOut }) {
       }
       setLocationText('');
       setDescription('');
-      setSelectedVulns([]);
+      setSelectedNeeds([]);
       fetchMyRequests();
     } catch (err) {
       setErrorMsg(err.message || 'Error submitting request');
@@ -173,19 +117,15 @@ export default function UserPortal({ onSignOut }) {
       {/* Top Header */}
       <header className="user-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div className="logo">🆘 DRSCP RELIEF PORTAL</div>
-          <span className="badge badge-assigned" style={{ fontSize: '0.7rem' }}>CITIZEN DISPATCH</span>
+          <div className="logo" style={{ color: 'var(--success)', fontWeight: 700, fontSize: '1.15rem' }}>
+            DRSCP Citizen Relief Portal
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <div className="avatar avatar-sm" style={{ background: 'linear-gradient(135deg, var(--user-primary), var(--accent))' }}>
-              {(user?.username || 'C')[0].toUpperCase()}
-            </div>
-            <div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{user?.username}</div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Role: {user?.role}</div>
-            </div>
+          <div style={{ textAlign: 'right', fontSize: '0.85rem' }}>
+            <div style={{ fontWeight: 600 }}>{user?.username}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Citizen Access</div>
           </div>
           <button className="btn btn-ghost btn-sm" onClick={onSignOut}>
             Sign Out
@@ -194,118 +134,135 @@ export default function UserPortal({ onSignOut }) {
       </header>
 
       {/* Main Body */}
-      <main className="user-main">
+      <main className="user-main" style={{ maxWidth: '850px', margin: '2rem auto', padding: '0 1rem' }}>
         {/* Instant Allocation Result Banner */}
         {recentResult && (
-          <div className={'result-card ' + (recentResult.auto_allocated ? 'success' : 'pending')}>
-            <div className="result-title">
-              <div className="result-icon">{recentResult.auto_allocated ? '⚡' : '⏳'}</div>
+          <div
+            className="animate-fade-up"
+            style={{
+              background: 'rgba(16, 185, 129, 0.1)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: 'var(--radius)',
+              padding: '1.25rem 1.5rem',
+              marginBottom: '1.75rem',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
               <div>
-                <h3 style={{ color: recentResult.auto_allocated ? 'var(--user-primary)' : 'var(--warning)', fontSize: '1.25rem' }}>
-                  {recentResult.auto_allocated
-                    ? 'Instant Assignment Confirmed via Priority Formula!'
-                    : 'Request Registered & Scored in Database'}
+                <h3 style={{ fontSize: '1.1rem', color: 'var(--success)', marginBottom: '0.2rem' }}>
+                  {recentResult.auto_allocated ? 'Request Submitted & Resources Assigned' : 'Request Registered'}
                 </h3>
-                <p style={{ fontSize: '0.875rem' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>
                   {recentResult.auto_allocated
-                    ? 'Our triage formula scored your request and immediately committed matching shelter beds, volunteers, or resources.'
-                    : 'Your request has been placed in the urgent queue. Emergency teams will fulfill it shortly.'}
+                    ? 'Matching relief has been allocated to your request.'
+                    : 'Your request is in queue and will be fulfilled shortly.'}
                 </p>
               </div>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setRecentResult(null)}
+              >
+                Dismiss
+              </button>
             </div>
 
-            <div className="result-detail">
-              <div className="result-detail-item">
-                <div className="lbl">Request ID</div>
-                <div className="val">#{recentResult.request?.request_id}</div>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: '0.75rem',
+                fontSize: '0.85rem',
+                background: 'rgba(0,0,0,0.2)',
+                padding: '0.75rem 1rem',
+                borderRadius: 'var(--radius-sm)',
+              }}
+            >
+              <div>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>REQUEST ID</span>
+                <strong>#{recentResult.request?.request_id}</strong>
               </div>
 
-              <div className="result-detail-item">
-                <div className="lbl">Database Priority Score</div>
-                <div className="val" style={{ color: 'var(--primary)', fontWeight: 800 }}>
-                  {parseFloat(recentResult.request?.priority_score || 0).toFixed(1)} pts
-                </div>
-              </div>
-
-              <div className="result-detail-item">
-                <div className="lbl">Status</div>
-                <div className="val">
-                  <span className={'badge badge-' + (recentResult.request?.status || 'allocated').toLowerCase()}>
-                    {recentResult.request?.status || 'ALLOCATED'}
-                  </span>
-                </div>
+              <div>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>STATUS</span>
+                <span className="badge badge-completed">{recentResult.request?.status || 'ALLOCATED'}</span>
               </div>
 
               {recentResult.allocation?.volunteer_name && (
-                <div className="result-detail-item">
-                  <div className="lbl">Dispatched Responder</div>
-                  <div className="val" style={{ color: 'var(--success)' }}>
-                    👤 {recentResult.allocation.volunteer_name}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    📞 {recentResult.allocation.volunteer_phone || 'Assigned'}
-                  </div>
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>ASSIGNED VOLUNTEER</span>
+                  <strong style={{ color: 'var(--success)' }}>{recentResult.allocation.volunteer_name}</strong>
+                  {recentResult.allocation.volunteer_phone && (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Phone: {recentResult.allocation.volunteer_phone}</div>
+                  )}
                 </div>
               )}
 
               {recentResult.allocation?.shelter_name && (
-                <div className="result-detail-item">
-                  <div className="lbl">Assigned Shelter</div>
-                  <div className="val" style={{ color: 'var(--primary)' }}>
-                    🏠 {recentResult.allocation.shelter_name}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {recentResult.allocation.beds_allocated} Bed(s) Reserved
-                  </div>
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>ASSIGNED SHELTER</span>
+                  <strong style={{ color: 'var(--primary)' }}>{recentResult.allocation.shelter_name}</strong>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{recentResult.allocation.beds_allocated} bed(s) reserved</div>
                 </div>
               )}
 
               {recentResult.allocation?.resource_name && (
-                <div className="result-detail-item">
-                  <div className="lbl">Allocated Resource</div>
-                  <div className="val" style={{ color: 'var(--accent)' }}>
-                    📦 {recentResult.allocation.quantity}x {recentResult.allocation.resource_name}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    From {recentResult.allocation.shelter_name}
-                  </div>
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>ALLOCATED SUPPLIES</span>
+                  <strong style={{ color: 'var(--accent)' }}>
+                    {recentResult.allocation.quantity}x {recentResult.allocation.resource_name}
+                  </strong>
                 </div>
               )}
-            </div>
-
-            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
-              <button className="btn btn-ghost btn-sm" onClick={() => setRecentResult(null)}>
-                Dismiss Banner
-              </button>
             </div>
           </div>
         )}
 
         {/* Relief Request Input Form */}
-        <div className="request-form-card animate-fade-up">
-          <h2>Input Relief Requirements</h2>
-          <p className="sub">
-            Specify your emergency requirements and any vulnerable members (elderly, wheelchair, pregnant, infants) to trigger elevated priority scoring and instant dispatch.
+        <div className="card animate-fade-up" style={{ padding: '1.75rem', marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>Submit Relief Request</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+            Fill in your details below. Emergency services will assign appropriate relief based on your needs.
           </p>
 
-          {errorMsg && <div className="error-msg">⚠️ {errorMsg}</div>}
+          {errorMsg && (
+            <div
+              style={{
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: 'var(--danger)',
+                padding: '0.75rem 1rem',
+                borderRadius: 'var(--radius-sm)',
+                marginBottom: '1.25rem',
+                fontSize: '0.875rem',
+              }}
+            >
+              {errorMsg}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             {/* Request Type Selector */}
             <div className="form-group">
-              <label>Select Requirement Type (Base Urgency Weight)</label>
-              <div className="type-grid">
+              <label>What assistance do you need?</label>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                  gap: '0.5rem',
+                  marginTop: '0.4rem',
+                }}
+              >
                 {REQUEST_TYPES.map((t) => (
                   <button
                     key={t.id}
                     type="button"
                     className={'type-btn ' + (reqType === t.id ? 'selected' : '')}
                     onClick={() => setReqType(t.id)}
+                    style={{ textAlign: 'left', padding: '0.75rem' }}
                   >
-                    <div style={{ fontSize: '1.25rem', marginBottom: '0.2rem' }}>{t.icon}</div>
-                    <div style={{ fontWeight: 600 }}>{t.label}</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                      +{TYPE_SCORES[t.id]} pts base
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t.label}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                      {t.desc}
                     </div>
                   </button>
                 ))}
@@ -323,7 +280,7 @@ export default function UserPortal({ onSignOut }) {
               </div>
 
               <div className="form-group">
-                <label>Household Size (Persons)</label>
+                <label>Household Size (Number of people)</label>
                 <input
                   type="number"
                   min="1"
@@ -337,157 +294,52 @@ export default function UserPortal({ onSignOut }) {
             </div>
 
             <div className="form-group">
-              <label>Your Current Location / Address</label>
+              <label>Street Address / Location</label>
               <input
                 className="form-control"
-                placeholder="e.g. 42 Anna Salai, Guindy, near Bus Depot"
+                placeholder="e.g. 42 Anna Salai, Guindy"
                 value={locationText}
                 onChange={(e) => setLocationText(e.target.value)}
                 required
               />
             </div>
 
-            {/* VULNERABILITY CHECKBOXES (Requirement 2) */}
-            <div className="form-group" style={{ marginTop: '1.25rem' }}>
-              <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>🚨 Household Vulnerabilities (Select all that apply for Higher Priority)</span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 600 }}>
-                  +{vulnScore} pts added from vulnerabilities
-                </span>
-              </label>
-
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                  gap: '0.75rem',
-                  marginTop: '0.5rem',
-                }}
-              >
-                {VULNERABILITY_OPTIONS.map((opt) => {
-                  const isChecked = selectedVulns.includes(opt.id);
+            {/* Special Needs Checkboxes */}
+            <div className="form-group">
+              <label>Special requirements in your household (optional)</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.4rem' }}>
+                {SPECIAL_NEEDS.map((item) => {
+                  const checked = selectedNeeds.includes(item.id);
                   return (
-                    <div
-                      key={opt.id}
-                      onClick={() => toggleVuln(opt.id)}
+                    <label
+                      key={item.id}
                       style={{
-                        background: isChecked ? 'rgba(59, 130, 246, 0.12)' : 'var(--surface-2)',
-                        border: `1.5px solid ${isChecked ? 'var(--primary)' : 'var(--border)'}`,
-                        borderRadius: 'var(--radius-sm)',
-                        padding: '0.75rem 0.9rem',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
                         display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: '0.65rem',
+                        alignItems: 'center',
+                        gap: '0.6rem',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem',
+                        color: checked ? 'var(--text)' : 'var(--text-dim)',
                       }}
                     >
                       <input
                         type="checkbox"
-                        checked={isChecked}
-                        onChange={() => {}} // handled by parent div onClick
-                        style={{ marginTop: '0.2rem', cursor: 'pointer' }}
+                        checked={checked}
+                        onChange={() => toggleNeed(item.id)}
                       />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontWeight: 600, fontSize: '0.875rem', color: isChecked ? '#fff' : 'var(--text)' }}>
-                            {opt.icon} {opt.label}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: '0.7rem',
-                              fontWeight: 700,
-                              background: isChecked ? 'var(--primary)' : 'rgba(255,255,255,0.08)',
-                              color: isChecked ? '#fff' : 'var(--text-muted)',
-                              padding: '0.15rem 0.4rem',
-                              borderRadius: '4px',
-                            }}
-                          >
-                            +{opt.weight} pts
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                          {opt.desc}
-                        </div>
-                      </div>
-                    </div>
+                      <span>{item.label}</span>
+                    </label>
                   );
                 })}
               </div>
             </div>
 
-            {/* LIVE PRIORITY SCORE CALCULATOR / PREVIEW WIDGET */}
-            <div
-              style={{
-                background: triageCategory.bg,
-                border: `1px solid ${triageCategory.border}`,
-                borderRadius: 'var(--radius)',
-                padding: '1.25rem',
-                marginTop: '1.25rem',
-                marginBottom: '1.25rem',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '1.25rem' }}>📊</span>
-                  <strong style={{ fontSize: '0.95rem', color: triageCategory.color }}>
-                    Real-Time Priority Score Calculator
-                  </strong>
-                </div>
-                <span
-                  style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    color: triageCategory.color,
-                    padding: '0.2rem 0.5rem',
-                    borderRadius: '4px',
-                    border: `1px solid ${triageCategory.color}`,
-                  }}
-                >
-                  {triageCategory.label}
-                </span>
-              </div>
-
-              {/* Formula chips */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.825rem' }}>
-                <span style={{ background: 'var(--surface-2)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
-                  Type Urgency: <strong>+{baseUrgencyScore}</strong> ({reqType})
-                </span>
-                <span>+</span>
-                <span style={{ background: 'var(--surface-2)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
-                  Vulnerability Flags: <strong style={{ color: vulnScore > 0 ? '#34d399' : 'inherit' }}>+{vulnScore}</strong> ({selectedVulns.length} active)
-                </span>
-                <span>+</span>
-                <span style={{ background: 'var(--surface-2)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
-                  Household Scale: <strong>+{householdScore}</strong> ({household} pax)
-                </span>
-                <span>=</span>
-                <span
-                  style={{
-                    background: 'var(--surface-3)',
-                    padding: '0.35rem 0.75rem',
-                    borderRadius: '6px',
-                    fontWeight: 800,
-                    fontSize: '1.05rem',
-                    color: triageCategory.color,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                  }}
-                >
-                  {livePriorityScore.toFixed(1)} pts
-                </span>
-              </div>
-
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.65rem' }}>
-                💡 Formula: <code>compute_priority_score = SUM(vulnerabilities) + wait_bonus + urgency_constant + household_factor</code>. Higher scores are prioritized at the top of the dispatch queue.
-              </div>
-            </div>
-
             <div className="form-group">
-              <label>Additional Situation Details (Optional)</label>
+              <label>Additional Notes (optional)</label>
               <textarea
                 className="form-control"
                 rows="2"
-                placeholder="e.g. Water reached 3 feet, stranded on terrace, urgent boat needed..."
+                placeholder="Any other helpful details..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
@@ -497,107 +349,80 @@ export default function UserPortal({ onSignOut }) {
               type="submit"
               className="btn btn-success btn-full btn-lg"
               disabled={submitting}
-              style={{ marginTop: '0.75rem', fontWeight: 700 }}
+              style={{ marginTop: '0.5rem', fontWeight: 600 }}
             >
-              {submitting ? (
-                <><span className="spinner" /> Computing Priority &amp; Auto-Assigning...</>
-              ) : (
-                `🚀 Submit Request (Priority Score: ${livePriorityScore.toFixed(1)} pts)`
-              )}
+              {submitting ? 'Submitting Request...' : 'Submit Request'}
             </button>
           </form>
         </div>
 
-        {/* Existing Citizen Requests List */}
+        {/* Previous Requests List */}
         <div>
           <div className="section-title">
-            <h2>📋 Your Registered Requests &amp; Live Allocations</h2>
+            <h2 style={{ fontSize: '1.1rem' }}>Your Requests</h2>
             <button className="btn btn-ghost btn-sm" onClick={fetchMyRequests} disabled={loadingHistory}>
-              {loadingHistory ? <span className="spinner" /> : '↻ Refresh Status'}
+              {loadingHistory ? 'Refreshing...' : 'Refresh'}
             </button>
           </div>
 
           {myRequests.length === 0 ? (
-            <div className="empty-state">
-              <div className="emoji">📝</div>
-              <h3>No Previous Requests</h3>
-              <p>When you submit a requirement above, you can monitor its real-time allocation status here.</p>
+            <div className="card" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+              No requests submitted yet.
             </div>
           ) : (
-            <div className="my-requests">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {myRequests.map((r) => {
-                const score = parseFloat(r.priority_score || 0).toFixed(1);
                 const statusStr = r.alloc_status || r.status || 'PENDING';
                 return (
-                  <div key={r.request_id} className="request-item animate-fade-up">
-                    <div className="request-item-header">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <span className="badge badge-shelter">Req #{r.request_id}</span>
-                        <span className="badge badge-evac">{r.request_type}</span>
-                        <span className="priority-pill priority-medium" style={{ fontWeight: 700 }}>
-                          🔥 Priority Score: {score} pts
-                        </span>
+                  <div key={r.request_id} className="card animate-fade-up" style={{ padding: '1.25rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span className="badge badge-pending">Req #{r.request_id}</span>
+                        <strong>{r.request_type}</strong>
                       </div>
                       <span className={'badge badge-' + statusStr.toLowerCase()}>{statusStr}</span>
                     </div>
 
-                    <div style={{ fontSize: '0.875rem', color: 'var(--text-dim)', marginBottom: '0.5rem' }}>
-                      📍 {r.location_text} · {r.district} (Household of {r.household_size})
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)', marginBottom: '0.75rem' }}>
+                      {r.location_text}, {r.district} · {r.household_size} person(s)
                     </div>
 
-                    {/* Show Tagged Vulnerabilities */}
-                    {r.vulnerabilities && (
-                      <div style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Vulnerabilities:</span>
-                        {r.vulnerabilities.split(',').map((v) => (
-                          <span
-                            key={v.trim()}
-                            style={{
-                              background: 'rgba(59, 130, 246, 0.15)',
-                              color: '#60a5fa',
-                              border: '1px solid rgba(59, 130, 246, 0.3)',
-                              borderRadius: '4px',
-                              padding: '0.1rem 0.4rem',
-                              fontSize: '0.725rem',
-                              fontWeight: 600,
-                            }}
-                          >
-                            {v.trim()}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="request-item-meta">
-                      <div className="meta-item">
-                        <div className="lbl">Submitted At</div>
-                        <div className="val">
-                          {r.created_at ? new Date(r.created_at).toLocaleString() : '—'}
-                        </div>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                        gap: '0.5rem',
+                        fontSize: '0.8rem',
+                        background: 'var(--surface-2)',
+                        padding: '0.65rem 0.85rem',
+                        borderRadius: 'var(--radius-sm)',
+                      }}
+                    >
+                      <div>
+                        <span style={{ color: 'var(--text-muted)', display: 'block' }}>Date</span>
+                        <div>{r.created_at ? new Date(r.created_at).toLocaleDateString() : '—'}</div>
                       </div>
 
                       {r.shelter_name && (
-                        <div className="meta-item">
-                          <div className="lbl">🏠 Assigned Shelter</div>
-                          <div className="val" style={{ color: 'var(--primary)' }}>
-                            {r.shelter_name} ({r.beds_allocated} beds)
-                          </div>
+                        <div>
+                          <span style={{ color: 'var(--text-muted)', display: 'block' }}>Shelter</span>
+                          <div style={{ color: 'var(--primary)', fontWeight: 500 }}>{r.shelter_name}</div>
                         </div>
                       )}
 
                       {r.volunteer_name && (
-                        <div className="meta-item">
-                          <div className="lbl">👤 Dispatched Responder</div>
-                          <div className="val" style={{ color: 'var(--success)' }}>
-                            {r.volunteer_name} {r.volunteer_phone ? '📞 ' + r.volunteer_phone : ''}
+                        <div>
+                          <span style={{ color: 'var(--text-muted)', display: 'block' }}>Assigned Volunteer</span>
+                          <div style={{ color: 'var(--success)', fontWeight: 500 }}>
+                            {r.volunteer_name} {r.volunteer_phone ? '(' + r.volunteer_phone + ')' : ''}
                           </div>
                         </div>
                       )}
 
                       {r.resource_name && (
-                        <div className="meta-item">
-                          <div className="lbl">📦 Allocated Supplies</div>
-                          <div className="val" style={{ color: 'var(--accent)' }}>
+                        <div>
+                          <span style={{ color: 'var(--text-muted)', display: 'block' }}>Supplies</span>
+                          <div style={{ color: 'var(--accent)', fontWeight: 500 }}>
                             {r.resource_quantity}x {r.resource_name}
                           </div>
                         </div>
