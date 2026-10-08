@@ -1,0 +1,330 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DRSCP - Enhanced Entity-Relationship (EER) Architecture</title>
+<style>
+  :root {
+    --bg: #090d16;
+    --card: #111827;
+    --card-border: #1f293d;
+    --accent-blue: #3b82f6;
+    --accent-teal: #0d9488;
+    --accent-purple: #8b5cf6;
+    --accent-amber: #f59e0b;
+    --accent-red: #ef4444;
+    --text: #f3f4f6;
+    --text-muted: #9ca3af;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { background: var(--bg); color: var(--text); padding: 2rem; overflow-x: auto; }
+  header { margin-bottom: 2rem; border-bottom: 1px solid var(--card-border); padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: flex-end; }
+  h1 { font-size: 1.6rem; color: #fff; font-weight: 700; }
+  .subtitle { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
+  .legend { display: flex; gap: 1.25rem; flex-wrap: wrap; margin-top: 1rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: var(--text-muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  .diagram-container {
+    display: grid;
+    grid-template-columns: repeat(4, 300px);
+    gap: 2rem;
+    position: relative;
+    padding: 1rem 0;
+  }
+
+  .module-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .module-card:hover { transform: translateY(-3px); border-color: var(--accent-blue); }
+
+  .card-header {
+    padding: 0.75rem 1rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .badge-module { font-size: 0.65rem; padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 600; }
+
+  .attr-list { list-style: none; padding: 0.5rem 0; font-size: 0.8rem; }
+  .attr-item { padding: 0.35rem 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .attr-item:last-child { border-bottom: none; }
+  .attr-name { font-family: monospace; color: #e5e7eb; }
+  .attr-tag { font-size: 0.65rem; font-weight: 700; border-radius: 3px; padding: 0.1rem 0.3rem; }
+
+  .tag-pk { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+  .tag-fk { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+  .tag-denorm { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+
+  .rel-callout {
+    margin-top: 2rem;
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 1.25rem;
+    font-size: 0.85rem;
+  }
+  .rel-callout h3 { font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--accent-blue); }
+  .rel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 0.75rem; }
+  .rel-item { background: #1e293b; padding: 0.75rem 1rem; border-radius: 6px; }
+  .rel-item strong { color: #f3f4f6; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>DRSCP - Enhanced Entity-Relationship (EER) Architecture</h1>
+    <p class="subtitle">Disaster Resource & Shelter Coordination Platform · 13 Entities · 3NF/BCNF Compliant</p>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot" style="background:var(--accent-blue)"></span> Core Administrative</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--accent-red)"></span> Triage & Demographics</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--accent-teal)"></span> Resource Depots</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--accent-purple)"></span> Allocations & Audit Trail</div>
+    </div>
+  </div>
+  <div style="font-size:0.8rem; color:var(--text-muted); text-align:right;">
+    Database Systems Lab Capstone<br>
+    <strong>Lead Architect: Person A</strong>
+  </div>
+</header>
+
+<div class="diagram-container">
+
+  <!-- Column 1: Core Agencies & Users -->
+  <div style="display:flex; flex-direction:column; gap:1.5rem;">
+    <div class="module-card">
+      <div class="card-header" style="background:rgba(59,130,246,0.1); color:var(--accent-blue)">
+        <span>AGENCIES</span>
+        <span class="badge-module" style="background:rgba(59,130,246,0.2)">ADMIN</span>
+      </div>
+      <ul class="attr-list">
+        <li class="attr-item"><span class="attr-name">agency_id</span><span class="attr-tag tag-pk">PK</span></li>
+        <li class="attr-item"><span class="attr-name">name (UK)</span></li>
+        <li class="attr-item"><span class="attr-name">agency_type</span></li>
+        <li class="attr-item"><span class="attr-name">contact_phone</span></li>
+        <li class="attr-item"><span class="attr-name">created_at</span></li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="card-header" style="background:rgba(59,130,246,0.1); color:var(--accent-blue)">
+        <span>APP_USERS (Superclass)</span>
+        <span class="badge-module" style="background:rgba(59,130,246,0.2)">AUTH</span>
+      </div>
+      <ul class="attr-list">
+        <li class="attr-item"><span class="attr-name">user_id</span><span class="attr-tag tag-pk">PK</span></li>
+        <li class="attr-item"><span class="attr-name">username (UK)</span></li>
+        <li class="attr-item"><span class="attr-name">password_hash</span></li>
+        <li class="attr-item"><span class="attr-name">role</span></li>
+        <li class="attr-item"><span class="attr-name">agency_id</span><span class="attr-tag tag-fk">FK</span></li>
+        <li class="attr-item"><span class="attr-name">volunteer_id</span><span class="attr-tag tag-fk">FK</span></li>
+        <li class="attr-item"><span class="attr-name">requester_id</span><span class="attr-tag tag-fk">FK</span></li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="card-header" style="background:rgba(59,130,246,0.1); color:var(--accent-blue)">
+        <span>VOLUNTEERS</span>
+        <span class="badge-module" style="background:rgba(59,130,246,0.2)">RESPONDER</span>
+      </div>
+      <ul class="attr-list">
+        <li class="attr-item"><span class="attr-name">volunteer_id</span><span class="attr-tag tag-pk">PK</span></li>
+        <li class="attr-item"><span class="attr-name">agency_id</span><span class="attr-tag tag-fk">FK</span></li>
+        <li class="attr-item"><span class="attr-name">full_name</span></li>
+        <li class="attr-item"><span class="attr-name">skill</span></li>
+        <li class="attr-item"><span class="attr-name">availability_status</span><span class="attr-tag tag-denorm">*SYNC</span></li>
+        <li class="attr-item"><span class="attr-name">phone</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Column 2: Requesters & Triage Scoring -->
+  <div style="display:flex; flex-direction:column; gap:1.5rem;">
+    <div class="module-card">
+      <div class="card-header" style="background:rgba(239,68,68,0.1); color:var(--accent-red)">
+        <span>REQUESTERS</span>
+        <span class="badge-module" style="background:rgba(239,68,68,0.2)">CITIZEN</span>
+      </div>
+      <ul class="attr-list">
+        <li class="attr-item"><span class="attr-name">requester_id</span><span class="attr-tag tag-pk">PK</span></li>
+        <li class="attr-item"><span class="attr-name">full_name</span></li>
+        <li class="attr-item"><span class="attr-name">phone</span></li>
+        <li class="attr-item"><span class="attr-name">district</span></li>
+        <li class="attr-item"><span class="attr-name">address</span></li>
+        <li class="attr-item"><span class="attr-name">created_at</span></li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="card-header" style="background:rgba(239,68,68,0.1); color:var(--accent-red)">
+        <span>REQUESTER_VULNERABILITIES</span>
+        <span class="badge-module" style="background:rgba(239,68,68,0.2)">BRIDGE M:N</span>
+      </div>
+      <ul class="attr-list">
+        <li class="attr-item"><span class="attr-name">requester_id</span><span class="attr-tag tag-pk">PK, FK</span></li>
+        <li class="attr-item"><span class="attr-name">vuln_type_id</span><span class="attr-tag tag-pk">PK, FK</span></li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="card-header" style="background:rgba(239,68,68,0.1); color:var(--accent-red)">
+        <span>VULNERABILITY_TYPES</span>
+        <span class="badge-module" style="background:rgba(239,68,68,0.2)">LOOKUP</span>
+      </div>
+      <ul class="attr-list">
+        <li class="attr-item"><span class="attr-name">vuln_type_id</span><span class="attr-tag tag-pk">PK</span></li>
+        <li class="attr-item"><span class="attr-name">name (UK)</span></li>
+        <li class="attr-item"><span class="attr-name">weight</span></li>
+        <li class="attr-item"><span class="attr-name">description</span></li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="card-header" style="background:rgba(239,68,68,0.1); color:var(--accent-red)">
+        <span>HELP_REQUESTS</span>
+        <span class="badge-module" style="background:rgba(239,68,68,0.2)">QUEUE</span>
+      </div>
+      <ul class="attr-list">
+        <li class="attr-item"><span class="attr-name">request_id</span><span class="attr-tag tag-pk">PK</span></li>
+        <li class="attr-item"><span class="attr-name">requester_id</span><span class="attr-tag tag-fk">FK</span></li>
+        <li class="attr-item"><span class="attr-name">request_type</span></li>
+        <li class="attr-item"><span class="attr-name">status</span></li>
+        <li class="attr-item"><span class="attr-name">priority_score</span><span class="attr-tag tag-denorm">*FORMULA</span></li>
+        <li class="attr-item"><span class="attr-name">household_size</span></li>
+        <li class="attr-item"><span class="attr-name">location_text</span></li>
+        <li class="attr-item"><span class="attr-name">district</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Column 3: Shelters & Inventory -->
+  <div style="display:flex; flex-direction:column; gap:1.5rem;">
+    <div class="module-card">
+      <div class="card-header" style="background:rgba(13,148,136,0.1); color:var(--accent-teal)">
+        <span>SHELTERS</span>
+        <span class="badge-module" style="background:rgba(13,148,136,0.2)">DEPOT</span>
+      </div>
+      <ul class="attr-list">
+        <li class="attr-item"><span class="attr-name">shelter_id</span><span class="attr-tag tag-pk">PK</span></li>
+        <li class="attr-item"><span class="attr-name">agency_id</span><span class="attr-tag tag-fk">FK</span></li>
+        <li class="attr-item"><span class="attr-name">name</span></li>
+        <li class="attr-item"><span class="attr-name">district</span></li>
+        <li class="attr-item"><span class="attr-name">total_capacity</span></li>
+        <li class="attr-item"><span class="attr-name">current_occupancy</span><span class="attr-tag tag-denorm">*SYNC</span></li>
+        <li class="attr-item"><span class="attr-name">status</span></li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="card-header" style="background:rgba(13,148,136,0.1); color:var(--accent-teal)">
+        <span>RESOURCE_INVENTORY</span>
+        <span class="badge-module" style="background:rgba(13,148,136,0.2)">STOCK</span>
+      </div>
+      <ul class="attr-list">
+        <li class="attr-item"><span class="attr-name">inventory_id</span><span class="attr-tag tag-pk">PK</span></li>
+        <li class="attr-item"><span class="attr-name">shelter_id</span><span class="attr-tag tag-fk">FK</span></li>
+        <li class="attr-item"><span class="attr-name">resource_type_id</span><span class="attr-tag tag-fk">FK</span></li>
+        <li class="attr-item"><span class="attr-name">quantity_available</span><span class="attr-tag tag-denorm">*SYNC</span></li>
+        <li class="attr-item"><span class="attr-name">reorder_threshold</span></li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="card-header" style="background:rgba(13,148,136,0.1); color:var(--accent-teal)">
+        <span>RESOURCE_TYPES</span>
+        <span class="badge-module" style="background:rgba(13,148,136,0.2)">CATALOG</span>
+      </div>
+      <ul class="attr-list">
+        <li class="attr-item"><span class="attr-name">resource_type_id</span><span class="attr-tag tag-pk">PK</span></li>
+        <li class="attr-item"><span class="attr-name">name (UK)</span></li>
+        <li class="attr-item"><span class="attr-name">category</span></li>
+        <li class="attr-item"><span class="attr-name">unit</span></li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="card-header" style="background:rgba(13,148,136,0.1); color:var(--accent-teal)">
+        <span>STOCK_ALERTS</span>
+        <span class="badge-module" style="background:rgba(13,148,136,0.2)">ALERT</span>
+      </div>
+      <ul class="attr-list">
+        <li class="attr-item"><span class="attr-name">alert_id</span><span class="attr-tag tag-pk">PK</span></li>
+        <li class="attr-item"><span class="attr-name">inventory_id</span><span class="attr-tag tag-fk">FK</span></li>
+        <li class="attr-item"><span class="attr-name">message</span></li>
+        <li class="attr-item"><span class="attr-name">resolved</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Column 4: Allocations & Audit Trail -->
+  <div style="display:flex; flex-direction:column; gap:1.5rem;">
+    <div class="module-card" style="border:1.5px solid var(--accent-purple)">
+      <div class="card-header" style="background:rgba(139,92,246,0.15); color:var(--accent-purple)">
+        <span>ALLOCATIONS</span>
+        <span class="badge-module" style="background:rgba(139,92,246,0.3)">TRANSACTION</span>
+      </div>
+      <ul class="attr-list">
+        <li class="attr-item"><span class="attr-name">allocation_id</span><span class="attr-tag tag-pk">PK</span></li>
+        <li class="attr-item"><span class="attr-name">request_id</span><span class="attr-tag tag-fk">FK</span></li>
+        <li class="attr-item"><span class="attr-name">shelter_id</span><span class="attr-tag tag-fk">FK</span></li>
+        <li class="attr-item"><span class="attr-name">volunteer_id</span><span class="attr-tag tag-fk">FK</span></li>
+        <li class="attr-item"><span class="attr-name">resource_type_id</span><span class="attr-tag tag-fk">FK</span></li>
+        <li class="attr-item"><span class="attr-name">quantity</span></li>
+        <li class="attr-item"><span class="attr-name">beds_allocated</span></li>
+        <li class="attr-item"><span class="attr-name">status</span></li>
+        <li class="attr-item"><span class="attr-name">allocated_by</span><span class="attr-tag tag-fk">FK</span></li>
+        <li class="attr-item"><span class="attr-name">allocated_at</span></li>
+      </ul>
+    </div>
+
+    <div class="module-card">
+      <div class="card-header" style="background:rgba(139,92,246,0.1); color:var(--accent-purple)">
+        <span>ALLOCATION_AUDIT_LOG</span>
+        <span class="badge-module" style="background:rgba(139,92,246,0.2)">LEDGER</span>
+      </div>
+      <ul class="attr-list">
+        <li class="attr-item"><span class="attr-name">log_id</span><span class="attr-tag tag-pk">PK</span></li>
+        <li class="attr-item"><span class="attr-name">allocation_id</span><span class="attr-tag tag-fk">FK</span></li>
+        <li class="attr-item"><span class="attr-name">action</span></li>
+        <li class="attr-item"><span class="attr-name">old_status</span></li>
+        <li class="attr-item"><span class="attr-name">new_status</span></li>
+        <li class="attr-item"><span class="attr-name">changed_by</span><span class="attr-tag tag-fk">FK</span></li>
+        <li class="attr-item"><span class="attr-name">changed_at</span></li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- Architecture & Specialization Highlights -->
+<div class="rel-callout">
+  <h3>Enhanced ER (EER) Concepts Implemented in DRSCP</h3>
+  <div class="rel-grid">
+    <div class="rel-item">
+      <strong>1. Disjoint Role Specialization:</strong>
+      <p style="color:var(--text-muted); margin-top:0.3rem;"><code>app_users</code> is the superclass entity that specializes into <em>Agency Manager</em> (agency_id), <em>Volunteer</em> (volunteer_id), and <em>Requester</em> (requester_id) with exclusive role constraints.</p>
+    </div>
+    <div class="rel-item">
+      <strong>2. Polymorphic Allocation Specialization:</strong>
+      <p style="color:var(--text-muted); margin-top:0.3rem;"><code>allocations</code> targets at least one resource: Shelter Bed (shelter_id), Responder Dispatch (volunteer_id), or Inventory Supply (resource_type_id), validated by trigger.</p>
+    </div>
+    <div class="rel-item">
+      <strong>3. ACID Trigger Synchronization:</strong>
+      <p style="color:var(--text-muted); margin-top:0.3rem;">Denormalized triage column <code>priority_score</code> and bed counts <code>current_occupancy</code> are mathematically updated by PostgreSQL triggers on every transaction.</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
